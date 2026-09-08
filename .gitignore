@@ -1,0 +1,16 @@
+node_modules
+dist
+.vite
+ios
+release
+release2
+release-*
+release-packager
+release-packager-*
+release-packager-fixed
+release-packager-stable
+entrega-*
+verification
+verification-*.png
+*.local
+*.log

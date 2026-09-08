@@ -1,0 +1,9 @@
+{
+  "name": "Notas no Bolso",
+  "short_name": "Notas",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f9f9f6",
+  "theme_color": "#f9f9f6",
+  "icons": []
+}
