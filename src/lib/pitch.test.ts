@@ -27,6 +27,22 @@ function guitarLikeWave(frequency: number, sampleRate = 44100, length = 16384) {
   return buffer;
 }
 
+function amplitudeModulatedBass(frequency: number, sampleRate = 48000, length = 8192) {
+  return Float32Array.from({ length }, (_, index) => {
+    const time = index / sampleRate;
+    const envelope =
+      0.05 +
+      0.95 *
+        (0.5 + 0.5 * Math.cos(2 * Math.PI * 5 * time + 0.7));
+    return (
+      envelope *
+      (0.13 * Math.sin(2 * Math.PI * frequency * time + 0.2) +
+        0.36 * Math.sin(4 * Math.PI * frequency * time + 0.7) +
+        0.12 * Math.sin(6 * Math.PI * frequency * time + 0.4))
+    );
+  });
+}
+
 function stiffStringWave(
   frequency: number,
   sampleRate: number,
@@ -87,6 +103,16 @@ describe('pitch detector', () => {
     expect(result).not.toBeNull();
     expect(result?.frequency).toBeGreaterThan(245.5);
     expect(result?.frequency).toBeLessThan(248.4);
+  });
+
+  it('ignores a slow amplitude envelope on a real-world-like bass sustain', () => {
+    const frequency = 82.406889;
+    const result = detectPitch(amplitudeModulatedBass(frequency), 48000);
+
+    expect(result).not.toBeNull();
+    expect(
+      Math.abs(1200 * Math.log2(result!.frequency / frequency)),
+    ).toBeLessThan(2);
   });
 
   it('calibrates all open strings despite stiffness, dominant partials and noise', () => {

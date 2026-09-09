@@ -39,6 +39,41 @@ describe('pitch stabilizer', () => {
     expect(transient?.frequency).toBeCloseTo(196, 0);
   });
 
+  it('does not replace a decaying fundamental with its weaker octave', () => {
+    const stabilizer = new PitchStabilizer();
+    const fundamental = { frequency: 196, clarity: 0.97, rms: 0.04 };
+
+    stabilizer.push(fundamental, 0);
+    stabilizer.push({ ...fundamental, rms: 0.035 }, 50);
+    stabilizer.push({ ...fundamental, rms: 0.03 }, 100);
+
+    for (let frame = 0; frame < 8; frame++) {
+      const result = stabilizer.push(
+        { frequency: 390.2, clarity: 0.94, rms: 0.012 },
+        150 + frame * 50,
+      );
+      expect(result?.frequency).toBeCloseTo(196, 0);
+      expect(result?.held).toBe(true);
+    }
+  });
+
+  it('allows a clearly re-plucked octave to become the new note', () => {
+    const stabilizer = new PitchStabilizer();
+    const fundamental = { frequency: 196, clarity: 0.97, rms: 0.04 };
+    for (let frame = 0; frame < 3; frame++)
+      stabilizer.push(fundamental, frame * 50);
+
+    let result;
+    for (let frame = 0; frame < 3; frame++)
+      result = stabilizer.push(
+        { frequency: 392, clarity: 0.97, rms: 0.065 },
+        200 + frame * 50,
+      );
+
+    expect(result?.frequency).toBeCloseTo(392, 0);
+    expect(result?.held).toBe(false);
+  });
+
   it('drops the held value after the sustain window expires', () => {
     vi.stubGlobal('performance', { now: () => 0 });
     const stabilizer = new PitchStabilizer();

@@ -11,6 +11,8 @@ const SWITCH_CENTS = 45;
 const REQUIRED_FRAMES = 3;
 const HOLD_MS = 1800;
 const EMA_ALPHA = 0.24;
+const OCTAVE_TOLERANCE_CENTS = 35;
+const NEW_OCTAVE_ATTACK_RATIO = 1.35;
 
 export class PitchStabilizer {
   private candidate: PitchResult | null = null;
@@ -38,6 +40,19 @@ export class PitchStabilizer {
     }
 
     const distanceFromStable = Math.abs(centsBetween(rawPitch.frequency, this.stable.frequency));
+
+    if (this.isFadingOctave(rawPitch, distanceFromStable)) {
+      this.candidate = null;
+      this.candidateFrames = 0;
+      if (now - this.lastStableAt <= HOLD_MS) {
+        return {
+          ...this.stable,
+          held: true
+        };
+      }
+      this.stable = null;
+      return null;
+    }
 
     if (distanceFromStable <= SWITCH_CENTS) {
       this.candidate = null;
@@ -96,6 +111,17 @@ export class PitchStabilizer {
     this.lastStableAt = now;
 
     return this.stable;
+  }
+
+  private isFadingOctave(rawPitch: PitchResult, distance: number) {
+    if (!this.stable) return false;
+    const octaves = Math.round(distance / 1200);
+    return (
+      octaves >= 1 &&
+      octaves <= 3 &&
+      Math.abs(distance - octaves * 1200) <= OCTAVE_TOLERANCE_CENTS &&
+      rawPitch.rms < this.stable.rms * NEW_OCTAVE_ATTACK_RATIO
+    );
   }
 }
 

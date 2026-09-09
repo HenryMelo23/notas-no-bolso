@@ -23,7 +23,9 @@ export function detectPitch(
     return null;
   if (!detector || detector.inputLength !== buffer.length) {
     detector = PitchDetector.forFloat32Array(buffer.length);
-    detector.clarityThreshold = 0.99;
+    // Near-1 MPM thresholds can prefer a slow amplitude envelope over the
+    // first periodic peak of a naturally decaying guitar string.
+    detector.clarityThreshold = 0.85;
     centered = new Float32Array(buffer.length);
     analysisWindow = Float32Array.from(
       { length: buffer.length },
@@ -46,11 +48,48 @@ export function detectPitch(
     clarity < 0.88
   )
     return null;
+  let fundamental = recoverSubharmonic(centered, sampleRate, frequency);
+  if (fundamental !== frequency && detector) {
+    detector.clarityThreshold = 0.99;
+    const [strictFrequency] = detector.findPitch(centered, sampleRate);
+    detector.clarityThreshold = 0.85;
+    if (
+      strictFrequency >= 65 &&
+      Math.abs(1200 * Math.log2(strictFrequency / frequency)) <= 80
+    )
+      fundamental = frequency;
+    else if (
+      strictFrequency >= 65 &&
+      Math.abs(1200 * Math.log2(strictFrequency / fundamental)) <= 80
+    )
+      fundamental = strictFrequency;
+  }
   return {
-    frequency: refineFundamental(centered, sampleRate, frequency),
+    frequency: refineFundamental(centered, sampleRate, fundamental),
     clarity,
     rms,
   };
+}
+
+// If MPM locks to a dominant second partial, a measurable component at half
+// its frequency identifies the real string fundamental. This remains untargeted.
+function recoverSubharmonic(
+  buffer: Float32Array,
+  sampleRate: number,
+  frequency: number,
+) {
+  const subharmonic = frequency / 2;
+  if (subharmonic < 65) return frequency;
+  const candidatePower = goertzelPower(buffer, sampleRate, frequency);
+  const subharmonicPower = goertzelPower(buffer, sampleRate, subharmonic);
+  const upperHarmonicPower = Math.max(
+    goertzelPower(buffer, sampleRate, frequency * 2),
+    goertzelPower(buffer, sampleRate, frequency * 3),
+  );
+  return subharmonicPower >= candidatePower * 0.001 &&
+    upperHarmonicPower < candidatePower * 0.02
+    ? subharmonic
+    : frequency;
 }
 
 // MPM identifies the period; this narrow spectral fit removes the small bias
