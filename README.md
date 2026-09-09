@@ -51,7 +51,7 @@ Saída esperada do APK debug:
 entrega-notas-0.4.1\Notas-no-Bolso-0.4.1-debug.apk
 ```
 
- Aulas e fontes funcionam offline; o YouTube precisa de internet. O app pausa a captura em segundo plano. O botão Voltar fecha a ajuda, retorna ao treino ou minimiza o aplicativo.
+Aulas e fontes funcionam offline; o YouTube precisa de internet. O app pausa a captura em segundo plano. O botão Voltar fecha a ajuda, retorna ao treino ou minimiza o aplicativo.
 
 Em **Trecho de prática**, escolha a parte inicial/final ou as notas exatas. A opção de repetir retorna ao início depois do último acerto. Praticar um fragmento não registra a música inteira como concluída.
 
