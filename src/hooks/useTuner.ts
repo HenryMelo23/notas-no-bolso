@@ -119,7 +119,6 @@ export function useTuner() {
         silent.gain.value = 0;
         analyser.connect(silent).connect(audio.destination);
         const buffer = new Float32Array(analyser.fftSize);
-        const tuningBuffer = buffer.subarray(buffer.length - 4096);
         const stabilizer = new PitchStabilizer();
         const practiceDetector = new PracticeDetector(analyser.fftSize);
         let lastAt = -Infinity;
@@ -129,7 +128,7 @@ export function useTuner() {
           if (now - lastAt >= 1000 / 30) {
             lastAt = now;
             analyser.getFloatTimeDomainData(buffer);
-            const rawPitch = detectPitch(tuningBuffer, audio.sampleRate);
+            const rawPitch = detectPitch(buffer, audio.sampleRate);
             const practice = practiceDetector.process(
               buffer,
               audio.sampleRate,

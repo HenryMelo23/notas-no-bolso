@@ -26,7 +26,7 @@ npm run electron:pack
 Saída esperada:
 
 ```text
-entrega-notas-0.4.1\Notas-no-Bolso-0.4.1.exe
+entrega-notas-0.4.2\Notas-no-Bolso-0.4.2.exe
 ```
 
 Esse executável portátil inclui os arquivos necessários e pode ser transferido sozinho. A pasta `Notas no Bolso-win32-x64` também é gerada para diagnóstico; o executável interno dessa pasta depende dos arquivos ao redor.
@@ -48,7 +48,7 @@ npm run android:build
 Saída esperada do APK debug:
 
 ```text
-entrega-notas-0.4.1\Notas-no-Bolso-0.4.1-debug.apk
+entrega-notas-0.4.2\Notas-no-Bolso-0.4.2-debug.apk
 ```
 
 Aulas e fontes funcionam offline; o YouTube precisa de internet. O app pausa a captura em segundo plano. O botão Voltar fecha a ajuda, retorna ao treino ou minimiza o aplicativo.
@@ -57,7 +57,9 @@ Em **Trecho de prática**, escolha a parte inicial/final ou as notas exatas. A o
 
 ## Limites atuais
 
-Na versão 0.4.1, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. O app mantém a leitura enquanto consegue distinguir a frequência do ruído; uma leitura antiga é identificada como tal e nunca orienta ajustes. O botão do tom da música explica os acordes sem alterar a afinação.
+Na versão 0.4.2, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. O app mantém a leitura enquanto consegue distinguir a frequência do ruído; uma leitura antiga é identificada como tal e nunca orienta ajustes. O botão do tom da música explica os acordes sem alterar a afinação.
+
+O afinador analisa 8192 amostras e combina a estimativa temporal MPM com um refinamento espectral estreito da frequência fundamental. O refinamento não recebe a nota esperada e, portanto, não desloca uma nota errada artificialmente para o centro. Quando o fundamental está fraco demais, a estimativa temporal conservadora é mantida.
 
 Durante uma música, um detector separado identifica o ataque de uma nova nota e reduz o espectro das cordas que continuam ressoando. Assim, a próxima nota pode ser aceita sem silenciar a anterior. Cada ataque só avança uma etapa, inclusive quando duas notas iguais aparecem em sequência; sinais mais de 25 cents fora da nota esperada continuam rejeitados.
 
