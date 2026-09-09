@@ -23,7 +23,7 @@ beforeEach(() => {
     pitch: null,
     rawPitch: null,
     practicePitch: null,
-    practiceOnset: 0,
+    practiceOnset: undefined,
     rms: 0,
     sampleId: 0,
     at: 0,
@@ -47,6 +47,34 @@ const resultFor = (midi: number): PitchResult => {
 };
 
 describe("mounted application audio smoke", () => {
+  it("uses new-pluck audio even when the tuner still hears the previous bass, once per onset", async () => {
+    const app = render(<App />);
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Começar a tocar" })),
+    );
+    const feed = (midi: number, onset: number) => {
+      for (let i = 0; i < 5; i++) {
+        tick++;
+        mock.audio = {
+          ...mock.audio,
+          sampleId: tick,
+          at: tick * 33.34,
+          rawPitch: resultFor(40),
+          practicePitch: resultFor(midi),
+          practiceOnset: onset,
+        };
+        app.rerender(<App />);
+      }
+    };
+    feed(40, 1);
+    expect(screen.getByText("1 / 48 notas")).toBeTruthy();
+    feed(47, 2);
+    expect(screen.getByText("2 / 48 notas")).toBeTruthy();
+    feed(40, 2);
+    expect(screen.getByText("2 / 48 notas")).toBeTruthy();
+    feed(40, 3);
+    expect(screen.getByText("3 / 48 notas")).toBeTruthy();
+  });
   it("opens the tuner automatically and does not cancel a pending OS permission dialog", () => {
     mock.audio.isListening = false;
     mock.audio.isStarting = () => true;

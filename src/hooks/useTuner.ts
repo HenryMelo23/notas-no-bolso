@@ -112,22 +112,24 @@ export function useTuner() {
         if (audio.state !== "running")
           throw new DOMException("Audio suspended", "AudioContextError");
         const analyser = audio.createAnalyser();
-        analyser.fftSize = 4096;
+        analyser.fftSize = 8192;
         analyser.smoothingTimeConstant = 0;
         audio.createMediaStreamSource(acquired).connect(analyser);
         const silent = audio.createGain();
         silent.gain.value = 0;
         analyser.connect(silent).connect(audio.destination);
         const buffer = new Float32Array(analyser.fftSize);
+        const tuningBuffer = buffer.subarray(buffer.length - 4096);
         const stabilizer = new PitchStabilizer();
         const practiceDetector = new PracticeDetector(analyser.fftSize);
         let lastAt = -Infinity;
-        const listen = (now: number) => {
+        const listen = () => {
           if (token !== generation.current) return;
-          if (now - lastAt >= 45) {
+          const now = audio.currentTime * 1000;
+          if (now - lastAt >= 1000 / 30) {
             lastAt = now;
             analyser.getFloatTimeDomainData(buffer);
-            const rawPitch = detectPitch(buffer, audio.sampleRate);
+            const rawPitch = detectPitch(tuningBuffer, audio.sampleRate);
             const practice = practiceDetector.process(
               buffer,
               audio.sampleRate,

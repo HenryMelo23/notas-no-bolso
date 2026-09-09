@@ -342,6 +342,7 @@ export function App() {
       noteMidi(lesson.notes[before.index]),
       tuner.at,
       reference,
+      tuner.practiceOnset,
     );
     const reachedEnd = result.advance && before.index === range.end;
     const complete = reachedEnd && !loop;
@@ -369,7 +370,6 @@ export function App() {
     if (complete) setRunning(false);
   }, [
     tuner.sampleId,
-    tuner.rawPitch,
     tuner.practicePitch,
     tuner.practiceOnset,
     tuner.at,

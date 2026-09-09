@@ -19,6 +19,8 @@ export class LessonFollower {
   private silenceAt: number | null = null;
   private previousRms = 0;
   private rearmed = false;
+  private onset: number | undefined;
+  private consumedOnset: number | undefined;
   private ringing = new Map<number, { at: number; rms: number }>();
   reset() {
     this.accepted = null;
@@ -27,6 +29,8 @@ export class LessonFollower {
     this.previousRms = 0;
     this.acceptedAt = -Infinity;
     this.rearmed = false;
+    this.onset = undefined;
+    this.consumedOnset = undefined;
     this.ringing.clear();
   }
   push(
@@ -34,6 +38,7 @@ export class LessonFollower {
     target: number,
     now: number,
     reference = 440,
+    onset?: number,
   ): FollowResult {
     const result = (
       feedback: Feedback,
@@ -41,7 +46,16 @@ export class LessonFollower {
       cents = 0,
       advance = false,
     ): FollowResult => ({ feedback, midi, cents, advance });
-    if (!pitch || pitch.clarity < 0.88) {
+    if (onset !== undefined) {
+      if (!onset) return result("waiting");
+      if (onset === this.consumedOnset) return result("sustain", this.accepted);
+      if (onset !== this.onset) {
+        this.onset = onset;
+        this.candidate = null;
+        this.rearmed = true;
+      }
+    }
+    if (!pitch || pitch.clarity < (onset === undefined ? 0.88 : 0.75)) {
       this.candidate = null;
       this.silenceAt ??= now;
       if (now - this.silenceAt >= 140) this.rearmed = true;
@@ -57,7 +71,7 @@ export class LessonFollower {
     const midi = Math.round(69 + 12 * Math.log2(pitch.frequency / reference));
     const cents =
       1200 * Math.log2(pitch.frequency / midiFrequency(target, reference));
-    if (attack && midi === target) {
+    if (onset === undefined && attack && midi === target) {
       this.rearmed = true;
       this.candidate = null;
     }
@@ -75,7 +89,7 @@ export class LessonFollower {
           [1200, 1901.955, -1200].some(
             (h) => Math.abs(relativeCents - h) < 30,
           ));
-      if (midi !== target && isTail) {
+      if (onset === undefined && midi !== target && isTail) {
         this.candidate = null;
         return result("sustain", oldMidi, cents);
       }
@@ -88,11 +102,15 @@ export class LessonFollower {
       this.candidate = midi;
       this.candidateAt = now;
     }
-    if (now - this.candidateAt < (midi === target ? 110 : 260))
+    if (
+      now - this.candidateAt <
+      (midi === target ? (onset === undefined ? 110 : 25) : 180)
+    )
       return result("listening", midi, cents);
     if (midi !== target) return result("wrong", midi, cents);
     if (Math.abs(cents) > 25) return result("intonation", midi, cents);
     this.accepted = midi;
+    this.consumedOnset = onset;
     this.acceptedAt = now;
     this.rearmed = false;
     this.ringing.set(midi, { at: now, rms: pitch.rms });
