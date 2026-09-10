@@ -26,7 +26,7 @@ npm run electron:pack
 Saída esperada:
 
 ```text
-entrega-notas-0.4.3\Notas-no-Bolso-0.4.3.exe
+entrega-notas-0.4.4\Notas-no-Bolso-0.4.4.exe
 ```
 
 Esse executável portátil inclui os arquivos necessários e pode ser transferido sozinho. A pasta `Notas no Bolso-win32-x64` também é gerada para diagnóstico; o executável interno dessa pasta depende dos arquivos ao redor.
@@ -48,7 +48,7 @@ npm run android:build
 Saída esperada do APK debug:
 
 ```text
-entrega-notas-0.4.3\Notas-no-Bolso-0.4.3-debug.apk
+entrega-notas-0.4.4\Notas-no-Bolso-0.4.4-debug.apk
 ```
 
 Aulas e fontes funcionam offline; o YouTube precisa de internet. O app pausa a captura em segundo plano. O botão Voltar fecha a ajuda, retorna ao treino ou minimiza o aplicativo.
@@ -57,7 +57,7 @@ Em **Trecho de prática**, escolha a parte inicial/final ou as notas exatas. A o
 
 ## Limites atuais
 
-Na versão 0.4.3, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. O app mantém a leitura enquanto consegue distinguir a frequência do ruído, rejeita modulações lentas do ambiente e não troca uma fundamental em queda pela oitava mais fraca. Uma leitura antiga é identificada como tal e nunca orienta ajustes. O botão do tom da música explica os acordes sem alterar a afinação.
+Na versão 0.4.4, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. Nas lições, um novo ataque correto avança no primeiro quadro confiável mesmo com outras cordas vibrando; a sustentação sozinha não conta como outro toque. O app mantém a leitura enquanto consegue distinguir a frequência do ruído, rejeita modulações lentas do ambiente e não troca uma fundamental em queda pela oitava mais fraca. Uma leitura antiga é identificada como tal e nunca orienta ajustes. O botão do tom da música explica os acordes sem alterar a afinação.
 
 O afinador analisa 8192 amostras e combina a estimativa temporal MPM com um refinamento espectral estreito da frequência fundamental. O refinamento não recebe a nota esperada e, portanto, não desloca uma nota errada artificialmente para o centro. Quando o fundamental está fraco demais, a estimativa temporal conservadora é mantida.
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PracticeDetector } from "./practiceDetector";
+import { PluckOnsetGate, PracticeDetector } from "./practiceDetector";
 import { BLUES, midiFrequency, noteMidi } from "./blues";
 import { LessonFollower } from "./lessonFollower";
 
@@ -52,6 +52,20 @@ export function mixture(plucks: Pluck[], now: number, rate = 48000) {
 }
 
 describe("new pluck extraction from actual overlapping PCM", () => {
+  it("re-arms from a relative valley above the ringing-string noise floor", () => {
+    const gate = new PluckOnsetGate();
+    expect(gate.push(0.01, 0, 0)).toBe(false);
+    expect(gate.push(0.12, 0.001, 100)).toBe(true);
+    expect(gate.push(0.11, 0.001, 180)).toBe(false);
+    expect(gate.push(0.075, 0.001, 260)).toBe(false);
+    expect(gate.push(0.11, 0.001, 300)).toBe(true);
+  });
+  it("does not split one attack before its spectral valley", () => {
+    const gate = new PluckOnsetGate();
+    expect(gate.push(0.12, 0.001, 100)).toBe(true);
+    expect(gate.push(0.14, 0.001, 260)).toBe(false);
+    expect(gate.push(0.13, 0.001, 430)).toBe(false);
+  });
   it("follows six open strings and does not count their mixed tail as another pluck", () => {
     const plucks = [40, 45, 50, 55, 59, 64].map((midi, i) => ({
       midi,

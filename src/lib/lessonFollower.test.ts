@@ -115,6 +115,21 @@ describe("blues audio smoke", () => {
       );
     expect(result!.advance).toBe(true);
   });
+  it("accepts the first reliable pitch frame from a fresh attack", () => {
+    const follower = new LessonFollower();
+    const result = follower.push(
+      { frequency: midiFrequency(45), rms: 0.08, clarity: 0.92 },
+      45,
+      500,
+      440,
+      2,
+    );
+    expect(result).toMatchObject({
+      advance: true,
+      feedback: "correct",
+      midi: 45,
+    });
+  });
   it("never accepts silence and requires a new articulation for repeated notes", () => {
     const follower = new LessonFollower();
     const pitch = { frequency: 110, rms: 0.1, clarity: 1 };

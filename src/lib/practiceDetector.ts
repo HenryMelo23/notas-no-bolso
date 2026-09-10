@@ -7,6 +7,42 @@ export type PracticeObservation = {
   onset: number;
 };
 
+export class PluckOnsetGate {
+  private onsetAt = -Infinity;
+  private armed = true;
+  private peak = 0;
+  private floor = 0;
+
+  push(novelty: number, fluxLevel: number, now: number) {
+    if (this.armed) {
+      this.floor = Math.min(this.floor, novelty);
+    } else {
+      this.peak = Math.max(this.peak, novelty);
+      // A ringing bass can keep the absolute novelty floor above 0.06. Wait
+      // for a relative valley, then require a new rise before another onset.
+      if (
+        now - this.onsetAt > 125 &&
+        novelty <= Math.max(0.06, this.peak * 0.72)
+      ) {
+        this.armed = true;
+        this.floor = novelty;
+      }
+    }
+    if (
+      !this.armed ||
+      novelty <= Math.max(0.08, this.floor * 1.28) ||
+      fluxLevel <= 0.00012 ||
+      now - this.onsetAt <= 125
+    )
+      return false;
+    this.onsetAt = now;
+    this.armed = false;
+    this.peak = novelty;
+    this.floor = Infinity;
+    return true;
+  }
+}
+
 // Spectral difference separates a new pluck from the decaying strings underneath.
 // It does not use the requested note, so a wrong pluck cannot be fitted to the answer.
 export class PracticeDetector {
@@ -21,7 +57,7 @@ export class PracticeDetector {
   private magnitudes: Float32Array;
   private onset = 0;
   private onsetAt = -Infinity;
-  private armed = true;
+  private onsetGate = new PluckOnsetGate();
   private detector: PitchDetector<Float32Array>;
 
   constructor(private size = 8192) {
@@ -75,19 +111,10 @@ export class PracticeDetector {
       flux += increase * increase;
     }
     const novelty = Math.sqrt(flux / Math.max(energy, 1e-12));
-    if (novelty < 0.06) {
-      this.armed = true;
-    }
-    if (
-      this.armed &&
-      novelty > 0.08 &&
-      Math.sqrt(flux) / this.size > 0.00012 &&
-      now - this.onsetAt > 125
-    ) {
+    if (this.onsetGate.push(novelty, Math.sqrt(flux) / this.size, now)) {
       this.background.set(this.previous);
       this.onset++;
       this.onsetAt = now;
-      this.armed = false;
     }
     const backgroundScale = Math.exp(-(now - this.onsetAt) * 0.00065);
     for (let k = 0; k < this.previous.length; k++) {

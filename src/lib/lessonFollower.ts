@@ -104,7 +104,7 @@ export class LessonFollower {
     }
     if (
       now - this.candidateAt <
-      (midi === target ? (onset === undefined ? 110 : 25) : 180)
+      (midi === target ? (onset === undefined ? 110 : 0) : 180)
     )
       return result("listening", midi, cents);
     if (midi !== target) return result("wrong", midi, cents);
