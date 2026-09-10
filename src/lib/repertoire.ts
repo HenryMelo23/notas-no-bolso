@@ -261,11 +261,15 @@ type MelodyPhrase = {
   events: MelodyEvent[];
 };
 const firstPosition: Record<number, Position> = {
+  52: [4, 2, 1],
+  54: [4, 4, 3],
   55: [3, 0, 0],
   57: [3, 2, 2],
   59: [2, 0, 0],
   60: [2, 1, 1],
+  61: [2, 2, 2],
   62: [2, 3, 3],
+  63: [2, 4, 4],
   64: [1, 0, 0],
   65: [1, 1, 1],
   66: [1, 2, 2],
@@ -433,6 +437,141 @@ export const BEGINNER_SONGS: BluesLesson[] = [
       { title: "That saved a wretch", chord: "G", events: melody(G3, [C4, 2], E4, [C4, 0.5], [E4, 0.5], [D4, 2], [G4, 3]) },
       { title: "I once was lost", chord: "F", events: melody(E4, [G4, 2], E4, G4, E4, [C4, 2], G3, A3, C4, [C4, 2], A3, [G3, 2]) },
       { title: "But now I see", chord: "C", events: melody(G3, [C4, 2], E4, [C4, 0.5], [E4, 0.5], [D4, 2], [C4, 3]) },
+    ],
+  ),
+];
+const E3 = 52;
+const FS3 = 54;
+const bluesLessonSource =
+  "https://www.guitarlessons.com/guitar-lessons/blues-guitar-quick-start-series/the-12-bar-blues-progression";
+const bluesBackingTrack = "https://www.youtube.com/watch?v=3nT5NyA8HEw";
+const bluesBar = (title: string, chord: string, events: MelodyEvent[]) => ({
+  title,
+  chord,
+  events,
+});
+const eShuffle = melody(
+  [E3, 0.5],
+  [B3, 0.5],
+  [E3, 0.5],
+  [G3, 0.5],
+  [A3, 0.5],
+  [G3, 0.5],
+  [E3, 0.5],
+  [D4, 0.5],
+);
+const aShuffle = melody(
+  [A3, 0.5],
+  [E4, 0.5],
+  [A3, 0.5],
+  [C4, 0.5],
+  [D4, 0.5],
+  [C4, 0.5],
+  [A3, 0.5],
+  [G4, 0.5],
+);
+const bShuffle = melody(
+  [B3, 0.5],
+  [FS3, 0.5],
+  [B3, 0.5],
+  [D4, 0.5],
+  [E4, 0.5],
+  [D4, 0.5],
+  [B3, 0.5],
+  [A3, 0.5],
+);
+export const BLUES_SONGS: BluesLesson[] = [
+  beginnerSong(
+    {
+      id: "blues-de-varanda",
+      title: "Blues de varanda",
+      artist: "Composição didática Notas no Bolso",
+      key: "Mi",
+      arrangement: "12 compassos com shuffle e turnaround",
+      source: bluesLessonSource,
+      youtube: bluesBackingTrack,
+      recording: "Backing track em E7 · A7 · B7",
+      bpm: 86,
+      meter: "4/4",
+      level: "Fácil",
+      kind: "Blues",
+      tip: "Este é um blues inteiro: quatro compassos em Mi, dois em Lá, dois de volta em Mi, e a tensão de Si-Lá-Mi-Si no final. O balanço vem do par grave-agudo, não da pressa.",
+    },
+    [
+      bluesBar("1 · Mi", "E7", eShuffle),
+      bluesBar("2 · Mi", "E7", eShuffle),
+      bluesBar("3 · Mi", "E7", eShuffle),
+      bluesBar("4 · Mi", "E7", eShuffle),
+      bluesBar("5 · Lá", "A7", aShuffle),
+      bluesBar("6 · Lá", "A7", aShuffle),
+      bluesBar("7 · Mi", "E7", eShuffle),
+      bluesBar("8 · Mi", "E7", eShuffle),
+      bluesBar("9 · Si", "B7", bShuffle),
+      bluesBar("10 · Lá", "A7", aShuffle),
+      bluesBar("11 · Mi", "E7", eShuffle),
+      bluesBar("12 · Volta", "B7", bShuffle),
+    ],
+  ),
+  beginnerSong(
+    {
+      id: "blues-pergunta-resposta",
+      title: "Blues: pergunta e resposta",
+      artist: "Composição didática Notas no Bolso",
+      key: "Mi",
+      arrangement: "Frases curtas da pentatônica menor",
+      source: "https://www.justinguitar.com/modules/blues-guitar-easy-improvisation",
+      youtube: "https://www.youtube.com/watch?v=-csesR_3EKI",
+      recording: "Aula de shuffle em Mi para iniciantes",
+      bpm: 78,
+      meter: "4/4",
+      level: "Fácil",
+      kind: "Blues",
+      tip: "O blues conversa. Toque a pergunta, respire no último tempo e responda usando Mi, Sol, Lá, Si e Ré. A terça menor dá a cor; o acorde E7 mantém o chão.",
+    },
+    [
+      bluesBar("Pergunta", "E7", melody([E3, 0.5], [G3, 0.5], [A3, 0.5], [B3, 0.5], [D4, 1.5], [B3, 0.5])),
+      bluesBar("Resposta", "E7", melody([B3, 0.5], [A3, 0.5], [G3, 0.5], [E3, 1.5], [D4, 0.5], [E3, 0.5])),
+      bluesBar("Pergunta em Lá", "A7", melody([A3, 0.5], [C4, 0.5], [D4, 0.5], [E4, 0.5], [G4, 1], [E4, 1])),
+      bluesBar("Resposta em Lá", "A7", melody([E4, 0.5], [D4, 0.5], [C4, 0.5], [A3, 1.5], [G3, 0.5], [A3, 0.5])),
+      bluesBar("Volta ao Mi", "E7", eShuffle),
+      bluesBar("Volta ao Mi", "E7", eShuffle),
+      bluesBar("Resposta curta", "E7", melody([G3, 0.5], [A3, 0.5], [B3, 0.5], [D4, 1], [B3, 1.5])),
+      bluesBar("Resposta curta", "E7", melody([A3, 0.5], [G3, 0.5], [E3, 0.5], [D4, 1], [E3, 1.5])),
+      bluesBar("Tensão", "B7", bShuffle),
+      bluesBar("Desce", "A7", aShuffle),
+      bluesBar("Resolve", "E7", eShuffle),
+      bluesBar("Turnaround", "B7", melody([B3, 0.5], [A3, 0.5], [G3, 0.5], [FS3, 0.5], [E3, 2])),
+    ],
+  ),
+  beginnerSong(
+    {
+      id: "blues-no-quintal",
+      title: "Blues no quintal",
+      artist: "Composição didática Notas no Bolso",
+      key: "Lá",
+      arrangement: "12 compassos em Lá com frase cantável",
+      source: "https://guitarcompass.com/free-lessons/blues/12-bar-blues/",
+      youtube: "https://www.youtube.com/watch?v=3nT5NyA8HEw",
+      recording: "Backing track de 12 compassos",
+      bpm: 82,
+      meter: "4/4",
+      level: "Fácil",
+      kind: "Blues",
+      tip: "Agora o mesmo mapa está em Lá. Ouça como a nota A3 continua sendo o repouso e como D7 e E7 criam movimento. Isso é a forma I-IV-V funcionando como uma música.",
+    },
+    [
+      bluesBar("1 · Lá", "A7", aShuffle),
+      bluesBar("2 · Lá", "A7", aShuffle),
+      bluesBar("3 · Lá", "A7", aShuffle),
+      bluesBar("4 · Lá", "A7", aShuffle),
+      bluesBar("5 · Ré", "D7", melody([D4, 0.5], [A3, 0.5], [D4, 0.5], [C4, 0.5], [D4, 0.5], [A3, 0.5], [G3, 0.5], [A3, 0.5])),
+      bluesBar("6 · Ré", "D7", melody([D4, 0.5], [A3, 0.5], [D4, 0.5], [C4, 0.5], [E4, 0.5], [D4, 0.5], [C4, 0.5], [A3, 0.5])),
+      bluesBar("7 · Lá", "A7", aShuffle),
+      bluesBar("8 · Lá", "A7", aShuffle),
+      bluesBar("9 · Mi", "E7", eShuffle),
+      bluesBar("10 · Ré", "D7", melody([D4, 0.5], [A3, 0.5], [D4, 0.5], [C4, 0.5], [E4, 0.5], [D4, 0.5], [C4, 0.5], [A3, 0.5])),
+      bluesBar("11 · Lá", "A7", aShuffle),
+      bluesBar("12 · Volta", "E7", eShuffle),
     ],
   ),
 ];
@@ -753,7 +892,12 @@ export const SONGS: BluesLesson[] = [
     ],
   ),
 ];
-export const LESSONS = [...BEGINNER_SONGS, ...BLUES, ...SONGS];
+export const LESSONS = [
+  ...BEGINNER_SONGS,
+  ...BLUES_SONGS,
+  ...BLUES,
+  ...SONGS,
+];
 export function lessonSections(lesson: BluesLesson) {
   return (
     lesson.sections ??

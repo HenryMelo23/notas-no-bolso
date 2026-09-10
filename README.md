@@ -57,13 +57,15 @@ Em **Trecho de prática**, escolha a parte inicial/final ou as notas exatas. A o
 
 ## Limites atuais
 
-Na versão 0.5.0, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. Nas lições, um novo ataque correto avança no primeiro quadro confiável mesmo com outras cordas vibrando; a sustentação sozinha não conta como outro toque. O app mantém a leitura enquanto consegue distinguir a frequência do ruído, rejeita modulações lentas do ambiente e não troca uma fundamental em queda pela oitava mais fraca. Uma leitura antiga é identificada como tal e nunca orienta ajustes. O botão do tom da música explica os acordes sem alterar a afinação.
+Na versão 0.6.0, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. Nas lições, um novo ataque correto avança no primeiro quadro confiável mesmo com outras cordas vibrando; a sustentação sozinha não conta como outro toque. O app mantém a leitura enquanto consegue distinguir a frequência do ruído, rejeita modulações lentas do ambiente e não troca uma fundamental em queda pela oitava mais fraca. Um ataque que já existia antes de iniciar a prática é descartado. O botão do tom da música explica os acordes sem alterar a afinação.
 
 O afinador analisa 8192 amostras e combina a estimativa temporal MPM com um refinamento espectral estreito da frequência fundamental. O refinamento não recebe a nota esperada e, portanto, não desloca uma nota errada artificialmente para o centro. Quando o fundamental está fraco demais, a estimativa temporal conservadora é mantida.
 
 Durante uma música, um detector separado identifica o ataque de uma nova nota e reduz o espectro das cordas que continuam ressoando. Assim, a próxima nota pode ser aceita sem silenciar a anterior. Cada ataque só avança uma etapa, inclusive quando duas notas iguais aparecem em sequência; sinais mais de 25 cents fora da nota esperada continuam rejeitados.
 
 As cinco primeiras músicas são melodias completas, em primeira posição e com no máximo a terceira casa: **Mary Had a Little Lamb**, **Brilha, Brilha, Estrelinha**, **Ode à Alegria**, **Parabéns pra Você** e **Amazing Grace**. O botão **Ouvir trecho** toca um guia sintetizado com contagem de entrada, BPM, compasso e duração das notas; **Ouvir gravação** abre a vídeo-aula vinculada. A faixa de prática permite escolher a parte inicial e final ou repetir um intervalo de notas.
+
+A biblioteca também traz três composições didáticas de blues: **Blues de varanda**, **Blues: pergunta e resposta** e **Blues no quintal**. Elas percorrem 12 compassos, mostram a relação I-IV-V e usam shuffle, pentatônica e turnaround para que o iniciante entenda como a linguagem se transforma em música.
 
 O APK inclui `RECORD_AUDIO` e `MODIFY_AUDIO_SETTINGS`, ambas exigidas pelo fluxo de áudio do Capacitor instalado. O pedido de permissão não interrompe mais a inicialização. Em caso de falha, a mensagem mostra o código do erro. A validação em Redmi Note 10S / Android 13 ainda depende de teste físico.
 

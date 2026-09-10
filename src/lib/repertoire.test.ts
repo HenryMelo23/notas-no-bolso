@@ -1,12 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { BEGINNER_SONGS, LESSONS, SONGS, lessonSections } from "./repertoire";
+import {
+  BEGINNER_SONGS,
+  BLUES_SONGS,
+  LESSONS,
+  SONGS,
+  lessonSections,
+} from "./repertoire";
 import { noteMidi, midiFrequency } from "./blues";
 import { detectPitch } from "./pitch";
 
 describe("repertoire integrity", () => {
   it("has contiguous, selectable sections and playable finger positions for all nine songs", () => {
     expect(SONGS).toHaveLength(9);
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(19);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(22);
     for (const lesson of SONGS) {
       expect(lesson.youtube).toMatch(
         /^https:\/\/www.youtube.com\/watch\?v=[\w-]{11}$/,
@@ -43,6 +49,26 @@ describe("repertoire integrity", () => {
       );
       expect(lesson.notes.every((note) => (note.beats ?? 0) > 0)).toBe(true);
       expect(Math.max(...lesson.notes.map((note) => note.fret))).toBeLessThanOrEqual(3);
+    }
+  });
+  it("teaches the blues as complete musical forms instead of isolated notes", () => {
+    expect(BLUES_SONGS).toHaveLength(3);
+    for (const lesson of BLUES_SONGS) {
+      expect(lesson.kind).toBe("Blues");
+      expect(lesson.bpm).toBeGreaterThan(0);
+      expect(lesson.sections).toHaveLength(12);
+      expect(lesson.notes.length).toBeGreaterThan(40);
+      for (const section of lesson.sections ?? []) {
+        const beats = lesson.notes
+          .slice(section.start, section.end + 1)
+          .reduce((total, note) => total + (note.beats ?? 1), 0);
+        expect(beats, `${lesson.id} ${section.title}`).toBeCloseTo(4, 5);
+      }
+      expect(
+        lesson.sections?.[lesson.sections.length - 1]?.title.toLocaleLowerCase(),
+      ).toMatch(
+        /volta|turnaround/,
+      );
     }
   });
   it("detects all repertoire pitches including the high B in the King introduction", () => {

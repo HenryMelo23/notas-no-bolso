@@ -130,6 +130,20 @@ describe("blues audio smoke", () => {
       midi: 45,
     });
   });
+  it("does not treat a pre-existing detector onset as the first pluck", () => {
+    const follower = new LessonFollower();
+    follower.reset(7);
+    const oldSound = {
+      frequency: midiFrequency(45),
+      rms: 0.1,
+      clarity: 1,
+    };
+    expect(follower.push(oldSound, 45, 500, 440, 7).advance).toBe(false);
+    expect(follower.push(oldSound, 45, 550, 440, 7).advance).toBe(false);
+    expect(
+      follower.push(oldSound, 45, 600, 440, 8).advance,
+    ).toBe(true);
+  });
   it("never accepts silence and requires a new articulation for repeated notes", () => {
     const follower = new LessonFollower();
     const pitch = { frequency: 110, rms: 0.1, clarity: 1 };

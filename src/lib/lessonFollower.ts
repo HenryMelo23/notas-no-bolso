@@ -22,15 +22,17 @@ export class LessonFollower {
   private onset: number | undefined;
   private consumedOnset: number | undefined;
   private ringing = new Map<number, { at: number; rms: number }>();
-  reset() {
+  reset(onset?: number) {
     this.accepted = null;
     this.candidate = null;
     this.silenceAt = null;
     this.previousRms = 0;
     this.acceptedAt = -Infinity;
     this.rearmed = false;
-    this.onset = undefined;
-    this.consumedOnset = undefined;
+    // A practice session may start while the microphone is already hearing a
+    // ringing string. That old detector event must not become a fresh pluck.
+    this.onset = onset;
+    this.consumedOnset = onset;
     this.ringing.clear();
   }
   push(

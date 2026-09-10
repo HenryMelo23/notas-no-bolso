@@ -85,6 +85,7 @@ describe("mounted application audio smoke", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Afinador" }));
     expect(mock.audio.start).toHaveBeenCalledOnce();
+    expect(document.querySelector(".tuner-buddy")).toBeTruthy();
     act(() => document.dispatchEvent(new Event("visibilitychange")));
     expect(mock.audio.stop).not.toHaveBeenCalled();
     mock.audio.isStarting = () => false;

@@ -98,6 +98,7 @@ export function App() {
   const [loop, setLoop] = useState(false);
   const [laps, setLaps] = useState(0);
   const [view, setView] = useState<View>("practice");
+  const viewHistory = useRef<View[]>(["practice"]);
   const [lessonId, setLessonId] = useState(LESSONS[0].id);
   const [session, setSession] = useState(initialSession);
   const sessionRef = useRef(session);
@@ -113,6 +114,8 @@ export function App() {
   const checked = tuning.checked;
   const [keyInfo, setKeyInfo] = useState(false);
   const [advanced, setAdvanced] = useState(false);
+  const [tuningCelebration, setTuningCelebration] = useState(false);
+  const [tuningRecommendation, setTuningRecommendation] = useState(LESSONS[0]);
   const [progress, setProgress] = useState(readProgress);
   const [demo, setDemo] = useState(false);
   const demoContext = useRef<AudioContext | null>(null);
@@ -159,6 +162,8 @@ export function App() {
     : null;
   const nearTarget = cents !== null && Math.abs(cents) <= 100;
   const centered = fresh && cents !== null && Math.abs(cents) <= 5;
+  const lastCheckedString =
+    tuning.checked[tuning.checked.length - 1] ?? tuningString;
   const tuningMessage = !tuner.isListening
     ? "Ative o microfone"
     : tuning.complete
@@ -186,15 +191,36 @@ export function App() {
     demoContext.current = null;
     setDemo(false);
   }
+  function rememberView(next: View) {
+    if (viewHistory.current[viewHistory.current.length - 1] !== next)
+      viewHistory.current.push(next);
+  }
+  function scrollToTop() {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
   function pause() {
     runToken.current++;
     setRunning(false);
   }
   function go(next: View) {
+    rememberView(next);
     pause();
     stopDemo();
     setView(next);
+    scrollToTop();
     if (next === "tuner" && !tuner.isListening && !tuner.starting)
+      void tuner.start(device);
+  }
+  function goBack() {
+    if (viewHistory.current.length > 1) viewHistory.current.pop();
+    const previous = viewHistory.current[viewHistory.current.length - 1] ?? "practice";
+    pause();
+    stopDemo();
+    setView(previous);
+    scrollToTop();
+    if (previous === "tuner" && !tuner.isListening && !tuner.starting)
       void tuner.start(device);
   }
   function reset(index = range.start) {
@@ -211,7 +237,9 @@ export function App() {
       end: LESSONS.find((l) => l.id === id)!.notes.length - 1,
     });
     setLessonId(id);
+    rememberView("practice");
     setView("practice");
+    scrollToTop();
   }
   function changeRange(start: number, end: number) {
     const from = Math.max(0, Math.min(lesson.notes.length - 1, start));
@@ -224,6 +252,20 @@ export function App() {
     stopDemo();
     tuner.stop();
   }
+  useEffect(() => {
+    scrollToTop();
+  }, [view, lessonId]);
+  useEffect(() => {
+    if (!tuning.checked.length) return;
+    setTuningCelebration(true);
+    const timer = window.setTimeout(() => setTuningCelebration(false), 900);
+    return () => window.clearTimeout(timer);
+  }, [tuning.checked.length]);
+  useEffect(() => {
+    if (!tuning.complete) return;
+    const options = LESSONS.filter((item) => item.id !== lesson.id);
+    setTuningRecommendation(options[Math.floor(Math.random() * options.length)] ?? LESSONS[0]);
+  }, [tuning.complete, lesson]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     document
@@ -258,7 +300,7 @@ export function App() {
       }),
       NativeApp.addListener("backButton", () => {
         if (help) setHelp(null);
-        else if (view !== "practice") go("practice");
+        else if (viewHistory.current.length > 1) goBack();
         else {
           pauseForRecording();
           void NativeApp.minimizeApp();
@@ -279,7 +321,7 @@ export function App() {
     const token = ++runToken.current;
     const ready = tuner.isListening || (await tuner.start(device));
     if (ready && runToken.current === token) {
-      follower.current.reset();
+      follower.current.reset(tuner.practiceOnset);
       publish({ ...sessionRef.current, feedback: "waiting", midi: null });
       setRunning(true);
     }
@@ -451,6 +493,19 @@ export function App() {
             : session.feedback === "intonation"
               ? "Quase! Confira a pressão do dedo e a afinação."
               : "Estou ouvindo. Toque quando quiser.";
+  const buddyPracticeMessage = session.complete
+    ? "Mandou bem! Agora toque de novo e perceba como a frase respira."
+    : wrong
+      ? "Quase. Olhe a corda e a casa que piscaram; eu espero sua próxima tentativa."
+      : !running
+        ? "Eu mostro a corda, a casa e o dedo. Ouça a nota e toque sem pressa."
+        : session.feedback === "correct"
+          ? "Boa! A próxima nota já está esperando."
+          : session.feedback === "sustain"
+            ? "Essa nota ainda está cantando. O próximo ataque é que vale."
+            : lesson.kind === "Blues"
+              ? "Sinta o balanço: grave, resposta e espaço. Blues também é conversa."
+              : "Estou ouvindo. Deixe a frase soar e siga quando estiver pronto.";
 
   return (
     <div className="notebook">
@@ -911,11 +966,17 @@ export function App() {
               </aside>
             </div>
             <div className="under-practice">
-              <img
-                className="buddy"
-                src="./blues-buddy.svg"
-                alt="Violão desenhado com chapéu de blues"
-              />
+              <div className="buddy-coach practice-buddy">
+                <img
+                  className="buddy"
+                  src="./blues-buddy.svg"
+                  alt="Mascote violão do Notas no Bolso"
+                />
+                <div className="buddy-bubble" role="status" aria-live="polite">
+                  <strong>Bluesinho</strong>
+                  <span>{buddyPracticeMessage}</span>
+                </div>
+              </div>
               <p className="hand-note">
                 Errar faz parte.
                 <br />A próxima tentativa é sua.
@@ -1185,27 +1246,47 @@ export function App() {
                   </button>
                 </div>
                 {tuning.complete && (
-                  <div className="tuning-complete">
-                    <p>
-                      {offset === 0
-                        ? `Que tal tocar ${LESSONS[(LESSONS.indexOf(lesson) + 1) % LESSONS.length].title}?`
+                <div className="tuning-complete">
+                  <p>
+                    {offset === 0
+                        ? `O mascote escolheu ${tuningRecommendation.title} para você testar agora.`
                         : "Conferência concluída. Para os estudos da biblioteca, use a afinação padrão."}
-                    </p>
+                  </p>
+                  {offset === 0 && (
                     <button
                       className="secondary"
-                      onClick={() => {
-                        selectLesson(
-                          LESSONS[(LESSONS.indexOf(lesson) + 1) % LESSONS.length].id,
-                        );
-                      }}
+                      onClick={() => selectLesson(tuningRecommendation.id)}
                     >
-                      Escolher próximo estudo <ArrowRight size={17} />
+                      Testar agora <Play size={17} />
                     </button>
+                  )}
                   </div>
                 )}
               </section>
               <aside className="tuner-notes">
-                <img src="./blues-buddy.svg" alt="Violão de blues desenhado" />
+                <div
+                  className={`buddy-coach tuner-buddy ${tuningCelebration ? "celebrate" : ""} ${tuning.complete ? "complete" : ""}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <img src="./blues-buddy.svg" alt="Mascote violão do Notas no Bolso" />
+                  <div className="buddy-bubble">
+                    <strong>Bluesinho</strong>
+                    <span>
+                      {tuning.complete
+                        ? `Tudo afinado! ${tuningRecommendation.title} espera por você.`
+                        : tuningCelebration
+                          ? `Boa! ${STRING_NAMES[lastCheckedString - 1]} está no ponto.`
+                          : tuning.waitingNext
+                            ? `Pode deixar soar. Agora é a ${tuningString}ª corda.`
+                            : !tuner.isListening
+                              ? "Vamos começar? Ative o microfone e toque uma corda."
+                              : centered
+                                ? "Isso! Segure mais um instante para confirmar."
+                                : "Estou ouvindo. Toque uma corda solta de cada vez."}
+                    </span>
+                  </div>
+                </div>
                 <h2>Sem pressa na tarraxa.</h2>
                 <p>
                   Toque uma corda de cada vez. O verde aparece quando o som
