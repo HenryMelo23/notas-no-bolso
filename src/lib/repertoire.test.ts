@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { LESSONS, SONGS, lessonSections } from "./repertoire";
+import { BEGINNER_SONGS, LESSONS, SONGS, lessonSections } from "./repertoire";
 import { noteMidi, midiFrequency } from "./blues";
 import { detectPitch } from "./pitch";
 
 describe("repertoire integrity", () => {
   it("has contiguous, selectable sections and playable finger positions for all nine songs", () => {
     expect(SONGS).toHaveLength(9);
-    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(14);
+    expect(new Set(LESSONS.map((l) => l.id)).size).toBe(19);
     for (const lesson of SONGS) {
       expect(lesson.youtube).toMatch(
         /^https:\/\/www.youtube.com\/watch\?v=[\w-]{11}$/,
@@ -28,6 +28,21 @@ describe("repertoire integrity", () => {
         expect(n.finger).toBeLessThanOrEqual(4);
         if (!n.fret) expect(n.finger).toBe(0);
       }
+    }
+  });
+  it("starts with five recognizable beginner melodies and keeps their rhythm data", () => {
+    expect(BEGINNER_SONGS).toHaveLength(5);
+    expect(LESSONS.slice(0, BEGINNER_SONGS.length)).toEqual(BEGINNER_SONGS);
+    for (const lesson of BEGINNER_SONGS) {
+      expect(["Primeiros passos", "Fácil"]).toContain(lesson.level);
+      expect(lesson.kind).toBe("Melodia");
+      expect(lesson.bpm).toBeGreaterThan(0);
+      expect(lesson.notes.length).toBeGreaterThan(20);
+      expect(lesson.youtube).toMatch(
+        /^https:\/\/www.youtube.com\/watch\?v=[\w-]{11}$/,
+      );
+      expect(lesson.notes.every((note) => (note.beats ?? 0) > 0)).toBe(true);
+      expect(Math.max(...lesson.notes.map((note) => note.fret))).toBeLessThanOrEqual(3);
     }
   });
   it("detects all repertoire pitches including the high B in the King introduction", () => {

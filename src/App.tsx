@@ -22,6 +22,8 @@ import {
   Repeat2,
   Youtube,
   Search,
+  Timer,
+  Music2,
 } from "lucide-react";
 import {
   FINGERS,
@@ -33,7 +35,7 @@ import {
   possiblePositions,
   type BluesLesson,
 } from "./lib/blues";
-import { LESSONS as BLUES, lessonSections } from "./lib/repertoire";
+import { LESSONS, lessonSections } from "./lib/repertoire";
 import { LessonFollower, type FollowResult } from "./lib/lessonFollower";
 import { useTuner } from "./hooks/useTuner";
 import { Capacitor } from "@capacitor/core";
@@ -42,6 +44,9 @@ import { TuningCoach } from "./lib/tuningCoach";
 
 type View = "practice" | "library" | "tuner";
 type Session = FollowResult & { index: number; complete: boolean };
+const beatLabel = (beats = 1) =>
+  beats === 0.5 ? "meio tempo" : `${beats} ${beats === 1 ? "tempo" : "tempos"}`;
+const beatShortLabel = (beats = 1) => (beats === 0.5 ? "1/2" : String(beats));
 const initialSession = (): Session => ({
   index: 0,
   complete: false,
@@ -88,12 +93,12 @@ export function App() {
   const [search, setSearch] = useState("");
   const [range, setRange] = useState({
     start: 0,
-    end: BLUES[0].notes.length - 1,
+    end: LESSONS[0].notes.length - 1,
   });
   const [loop, setLoop] = useState(false);
   const [laps, setLaps] = useState(0);
   const [view, setView] = useState<View>("practice");
-  const [lessonId, setLessonId] = useState(BLUES[0].id);
+  const [lessonId, setLessonId] = useState(LESSONS[0].id);
   const [session, setSession] = useState(initialSession);
   const sessionRef = useRef(session);
   const [running, setRunning] = useState(false);
@@ -116,7 +121,7 @@ export function App() {
   const consumedSample = useRef(0);
   const runToken = useRef(0);
   const tuner = useTuner();
-  const lesson = BLUES.find((l) => l.id === lessonId)!;
+  const lesson = LESSONS.find((l) => l.id === lessonId)!;
   const sections = useMemo(() => lessonSections(lesson), [lesson]);
   const noteOptions = useMemo(
     () =>
@@ -203,7 +208,7 @@ export function App() {
     reset(0);
     setRange({
       start: 0,
-      end: BLUES.find((l) => l.id === id)!.notes.length - 1,
+      end: LESSONS.find((l) => l.id === id)!.notes.length - 1,
     });
     setLessonId(id);
     setView("practice");
@@ -291,28 +296,48 @@ export function App() {
     const notes = all
       ? lesson.notes.slice(
           session.index,
-          Math.min(session.index + 8, range.end + 1),
+          Math.min(activeSection.end + 1, range.end + 1),
         )
       : [current];
-    let elapsed = 0;
+    const beatSeconds = 60 / (lesson.bpm ?? 92);
+    const countIn = all ? (lesson.meter === "3/4" ? 3 : 4) : 0;
+    let elapsed = countIn * beatSeconds;
+    for (let beat = 0; beat < countIn; beat++) {
+      const click = audio.createOscillator();
+      const clickGain = audio.createGain();
+      const start = audio.currentTime + beat * beatSeconds;
+      click.type = "square";
+      click.frequency.value = beat === 0 ? 1320 : 980;
+      clickGain.gain.setValueAtTime(0.055, start);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, start + 0.045);
+      click.connect(clickGain).connect(audio.destination);
+      click.start(start);
+      click.stop(start + 0.05);
+    }
     for (const note of notes) {
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
       const start = audio.currentTime + elapsed;
-      oscillator.type = "triangle";
-      oscillator.frequency.value = midiFrequency(noteMidi(note), reference);
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.12, start + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.55);
-      oscillator.connect(gain).connect(audio.destination);
-      oscillator.start(start);
-      oscillator.stop(start + 0.6);
-      elapsed +=
-        lesson.id === "shuffle"
-          ? notes.indexOf(note) % 2 === 0
-            ? 0.8
-            : 0.4
-          : 0.65;
+      const duration = beatSeconds * (note.beats ?? 1);
+      const frequency = midiFrequency(noteMidi(note), reference);
+      [
+        [1, 0.095, "triangle"],
+        [2, 0.027, "sine"],
+        [3, 0.012, "sine"],
+      ].forEach(([harmonic, volume, type]) => {
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        oscillator.type = type as OscillatorType;
+        oscillator.frequency.value = frequency * Number(harmonic);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(Number(volume), start + 0.012);
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          start + Math.max(0.18, Math.min(duration * 0.92, 1.4)),
+        );
+        oscillator.connect(gain).connect(audio.destination);
+        oscillator.start(start);
+        oscillator.stop(start + Math.max(0.2, Math.min(duration, 1.45)));
+      });
+      elapsed += duration;
     }
     demoTimer.current = setTimeout(stopDemo, elapsed * 1000 + 300);
   }
@@ -413,10 +438,10 @@ export function App() {
 
   const feedback = session.complete
     ? fullRange
-      ? "Você tocou o blues inteiro!"
+      ? "Você tocou a música inteira!"
       : "Você concluiu o trecho escolhido!"
     : !running
-      ? "Seu blues começa com uma nota."
+      ? "A música começa com uma nota."
       : session.feedback === "sustain"
         ? "Acertou. Deixe soar e toque a próxima."
         : session.feedback === "correct"
@@ -485,10 +510,17 @@ export function App() {
             <div className="page-heading">
               <div>
                 <span className="eyebrow">
-                  CADERNO DE BLUES / ESTUDO {BLUES.indexOf(lesson) + 1}
+                  {lesson.level ? lesson.level.toUpperCase() : "CADERNO DE BLUES"} /{" "}
+                  MÚSICA {LESSONS.indexOf(lesson) + 1}
                 </span>
                 <h1>{lesson.title}</h1>
                 <p>{lesson.subtitle}</p>
+                <div className="song-facts" aria-label="Informações da música">
+                  <span><Timer size={15} /> {lesson.bpm ?? 92} bpm</span>
+                  <span><Music2 size={15} /> {lesson.meter ?? "4/4"}</span>
+                  <span>{lesson.kind ?? "Estudo"}</span>
+                  {lesson.level && <span>{lesson.level}</span>}
+                </div>
                 <button
                   className="text-button song-key-button"
                   aria-expanded={keyInfo}
@@ -643,7 +675,7 @@ export function App() {
               >
                 <div className="lesson-toolbar">
                   <span>
-                    <b>{current.chord}</b> · Tom de {lesson.key}
+                    <b>{current.chord}</b> · {activeSection.title}
                   </span>
                   <span>
                     {lesson.artist ? "Bloco" : "Compasso"} {current.bar} /{" "}
@@ -710,6 +742,20 @@ export function App() {
                       })}
                     </div>
                   ))}
+                </div>
+                <div className="rhythm-row" aria-label="Duração das próximas notas">
+                  <span>ritmo</span>
+                  {Array.from({ length: 8 }, (_, i) => {
+                    const note =
+                      session.index + i <= range.end
+                        ? lesson.notes[session.index + i]
+                        : undefined;
+                    return (
+                      <small className={i === 0 ? "current" : ""} key={i}>
+                        {note ? beatShortLabel(note.beats) : ""}
+                      </small>
+                    );
+                  })}
                 </div>
                 <div className="tab-footer">
                   <span>↑ corda fina &nbsp; · &nbsp; ↓ corda grossa</span>
@@ -828,6 +874,10 @@ export function App() {
                     <dt>Som esperado</dt>
                     <dd>{pitchLabel(noteMidi(current))}</dd>
                   </div>
+                  <div>
+                    <dt>Duração</dt>
+                    <dd>{beatLabel(current.beats)}</dd>
+                  </div>
                 </dl>
                 <div
                   className="mini-neck"
@@ -855,7 +905,7 @@ export function App() {
                   className="text-button"
                   onClick={() => setHelp("lesson")}
                 >
-                  <Sparkles size={17} /> Um conselho para este blues{" "}
+                  <Sparkles size={17} /> Um conselho para esta música{" "}
                   <ChevronRight size={15} />
                 </button>
               </aside>
@@ -890,7 +940,7 @@ export function App() {
                 <Check />
                 <strong>
                   {fullRange
-                    ? "Estudo concluído. Seu blues ganhou vida!"
+                      ? "Música concluída. Agora ela tem começo, meio e fim!"
                     : "Trecho concluído. Mais uma volta?"}
                 </strong>
                 <button className="secondary" onClick={() => reset()}>
@@ -900,11 +950,11 @@ export function App() {
                   className="secondary"
                   onClick={() =>
                     selectLesson(
-                      BLUES[(BLUES.indexOf(lesson) + 1) % BLUES.length].id,
+                      LESSONS[(LESSONS.indexOf(lesson) + 1) % LESSONS.length].id,
                     )
                   }
                 >
-                  Próximo blues <ArrowRight size={18} />
+                  Próxima música <ArrowRight size={18} />
                 </button>
               </div>
             )}
@@ -916,10 +966,10 @@ export function App() {
             <div className="page-heading">
               <div>
                 <span className="eyebrow">SEU REPERTÓRIO</span>
-                <h1>Um caderno cheio de blues.</h1>
+                <h1>Aprenda tocando músicas de verdade.</h1>
                 <p>
-                  5 estudos iniciais e 9 músicas em versões didáticas, corda por
-                  corda.
+                  Comece por 5 melodias conhecidas e avance para blues e repertório,
+                  corda por corda.
                 </p>
               </div>
               <img
@@ -938,21 +988,22 @@ export function App() {
               />
             </label>
             <div className="lesson-list">
-              {BLUES.filter((item) =>
-                `${item.title} ${item.artist ?? ""}`
+              {LESSONS.filter((item) =>
+                `${item.title} ${item.artist ?? ""} ${item.level ?? ""}`
                   .toLocaleLowerCase()
                   .includes(search.toLocaleLowerCase()),
               ).map((item) => (
                 <article key={item.id}>
                   <span className="lesson-index">
-                    {String(BLUES.indexOf(item) + 1).padStart(2, "0")}
+                    {String(LESSONS.indexOf(item) + 1).padStart(2, "0")}
                   </span>
                   <div>
                     <h2>{item.title}</h2>
                     <p>{item.subtitle}</p>
                     <small>
-                      {item.notes.length} notas · {item.key} ·{" "}
-                      {lessonSections(item).length} partes
+                      {item.level ?? "Estudo"} · {item.kind ?? "Bloco"} ·{" "}
+                      {item.notes.length} notas · {item.key} · {item.bpm ?? 92} bpm ·{" "}
+                      {lessonSections(item).length} frases
                     </small>
                   </div>
                   <div className="library-progress">
@@ -993,8 +1044,8 @@ export function App() {
                   </div>
                 </article>
               ))}
-              {!BLUES.some((item) =>
-                `${item.title} ${item.artist ?? ""}`
+              {!LESSONS.some((item) =>
+                `${item.title} ${item.artist ?? ""} ${item.level ?? ""}`
                   .toLocaleLowerCase()
                   .includes(search.toLocaleLowerCase()),
               ) && <p>Nenhuma música encontrada.</p>}
@@ -1006,7 +1057,7 @@ export function App() {
           <>
             <div className="page-heading">
               <div>
-                <span className="eyebrow">ANTES DO PRIMEIRO BLUES</span>
+                <span className="eyebrow">ANTES DA PRIMEIRA MÚSICA</span>
                 <h1>Vamos afinar o ouvido.</h1>
                 <p>
                   Toque uma corda solta ou escolha uma abaixo. Lá = {reference}{" "}
@@ -1014,7 +1065,7 @@ export function App() {
                 </p>
               </div>
               <button className="secondary" onClick={() => go("practice")}>
-                <ArrowLeft size={17} /> Voltar ao blues
+                <ArrowLeft size={17} /> Voltar à música
               </button>
             </div>
             <div className="tuner-layout">
@@ -1137,14 +1188,14 @@ export function App() {
                   <div className="tuning-complete">
                     <p>
                       {offset === 0
-                        ? `Que tal tocar ${BLUES[(BLUES.indexOf(lesson) + 1) % BLUES.length].title}?`
+                        ? `Que tal tocar ${LESSONS[(LESSONS.indexOf(lesson) + 1) % LESSONS.length].title}?`
                         : "Conferência concluída. Para os estudos da biblioteca, use a afinação padrão."}
                     </p>
                     <button
                       className="secondary"
                       onClick={() => {
                         selectLesson(
-                          BLUES[(BLUES.indexOf(lesson) + 1) % BLUES.length].id,
+                          LESSONS[(LESSONS.indexOf(lesson) + 1) % LESSONS.length].id,
                         );
                       }}
                     >

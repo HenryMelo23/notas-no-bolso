@@ -9,7 +9,8 @@ import {
 } from "@testing-library/react";
 import { App } from "./App";
 import { detectPitch, type PitchResult } from "./lib/pitch";
-import { BLUES, midiFrequency, noteMidi } from "./lib/blues";
+import { midiFrequency, noteMidi } from "./lib/blues";
+import { LESSONS, lessonSections } from "./lib/repertoire";
 
 const mock = vi.hoisted(() => ({ audio: {} as Record<string, unknown> }));
 vi.mock("./hooks/useTuner", () => ({ useTuner: () => mock.audio }));
@@ -45,6 +46,8 @@ const resultFor = (midi: number): PitchResult => {
       0.03 * Math.sin((4 * Math.PI * hz * i) / 48000);
   return detectPitch(samples, 48000)!;
 };
+const beginner = LESSONS[0];
+const beginnerTotal = beginner.notes.length;
 
 describe("mounted application audio smoke", () => {
   it("uses new-pluck audio even when the tuner still hears the previous bass, once per onset", async () => {
@@ -66,14 +69,14 @@ describe("mounted application audio smoke", () => {
         app.rerender(<App />);
       }
     };
-    feed(40, 1);
-    expect(screen.getByText("1 / 48 notas")).toBeTruthy();
-    feed(47, 2);
-    expect(screen.getByText("2 / 48 notas")).toBeTruthy();
-    feed(40, 2);
-    expect(screen.getByText("2 / 48 notas")).toBeTruthy();
-    feed(40, 3);
-    expect(screen.getByText("3 / 48 notas")).toBeTruthy();
+    feed(noteMidi(beginner.notes[0]), 1);
+    expect(screen.getByText(`1 / ${beginnerTotal} notas`)).toBeTruthy();
+    feed(noteMidi(beginner.notes[1]), 2);
+    expect(screen.getByText(`2 / ${beginnerTotal} notas`)).toBeTruthy();
+    feed(noteMidi(beginner.notes[0]), 2);
+    expect(screen.getByText(`2 / ${beginnerTotal} notas`)).toBeTruthy();
+    feed(noteMidi(beginner.notes[2]), 3);
+    expect(screen.getByText(`3 / ${beginnerTotal} notas`)).toBeTruthy();
   });
   it("opens the tuner automatically and does not cancel a pending OS permission dialog", () => {
     mock.audio.isListening = false;
@@ -107,10 +110,12 @@ describe("mounted application audio smoke", () => {
         app.rerender(<App />);
       }
     };
-    feed(40);
-    expect(screen.getByText("1 / 48 notas")).toBeTruthy();
-    feed(40, 20);
-    expect(screen.getByText("1 / 48 notas")).toBeTruthy();
+    const firstMidi = noteMidi(beginner.notes[0]);
+    const secondMidi = noteMidi(beginner.notes[1]);
+    feed(firstMidi);
+    expect(screen.getByText(`1 / ${beginnerTotal} notas`)).toBeTruthy();
+    feed(firstMidi, 20);
+    expect(screen.getByText(`1 / ${beginnerTotal} notas`)).toBeTruthy();
     expect(
       screen.getByText("Acertou. Deixe soar e toque a próxima."),
     ).toBeTruthy();
@@ -118,21 +123,21 @@ describe("mounted application audio smoke", () => {
     expect(
       app.container.querySelectorAll(".wrong-string").length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText("1 / 48 notas")).toBeTruthy();
-    feed(47);
-    expect(screen.getByText("2 / 48 notas")).toBeTruthy();
+    expect(screen.getByText(`1 / ${beginnerTotal} notas`)).toBeTruthy();
+    feed(secondMidi);
+    expect(screen.getByText(`2 / ${beginnerTotal} notas`)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Pausar" }));
     feed(40, 10);
-    expect(screen.getByText("2 / 48 notas")).toBeTruthy();
+    expect(screen.getByText(`2 / ${beginnerTotal} notas`)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Recomeçar estudo" }));
-    expect(screen.getByText("0 / 48 notas")).toBeTruthy();
+    expect(screen.getByText(`0 / ${beginnerTotal} notas`)).toBeTruthy();
   });
   it("completes a whole lesson and keeps the tuner selectable with help popups", async () => {
     const app = render(<App />);
     await act(async () =>
       fireEvent.click(screen.getByRole("button", { name: "Começar a tocar" })),
     );
-    for (const note of BLUES[0].notes) {
+    for (const note of beginner.notes) {
       for (let i = 0; i < 5; i++) {
         tick++;
         mock.audio = {
@@ -156,8 +161,8 @@ describe("mounted application audio smoke", () => {
         app.rerender(<App />);
       }
     }
-    expect(screen.getByText("Você tocou o blues inteiro!")).toBeTruthy();
-    expect(screen.getByText("48 / 48 notas")).toBeTruthy();
+    expect(screen.getByText("Você tocou a música inteira!")).toBeTruthy();
+    expect(screen.getByText(`${beginnerTotal} / ${beginnerTotal} notas`)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Afinador" }));
     expect(screen.getByText("Vamos afinar o ouvido.")).toBeTruthy();
     fireEvent.click(
@@ -193,17 +198,18 @@ describe("mounted application audio smoke", () => {
         app.rerender(<App />);
       }
     };
-    feed(40);
+    const loopMidi = noteMidi(beginner.notes[4]);
+    feed(loopMidi);
     expect(screen.getByText(/1 volta\(s\)/)).toBeTruthy();
-    feed(40, 20);
+    feed(loopMidi, 20);
     expect(screen.getByText(/1 volta\(s\)/)).toBeTruthy();
     feed(null);
-    feed(40);
+    feed(loopMidi);
     expect(screen.getByText(/2 volta\(s\)/)).toBeTruthy();
     expect(localStorage.getItem("blues-notebook-progress")).toBeNull();
     fireEvent.click(screen.getByRole("checkbox", { name: "Repetir trecho" }));
     feed(null);
-    feed(40);
+    feed(loopMidi);
     expect(screen.getByText("Você concluiu o trecho escolhido!")).toBeTruthy();
     expect(screen.getByText("1 / 1 notas")).toBeTruthy();
   });
@@ -237,6 +243,10 @@ describe("mounted application audio smoke", () => {
       ).value,
     ).toBe("60");
     fireEvent.click(screen.getByRole("button", { name: "Recomeçar estudo" }));
-    expect(screen.getByText("0 / 48 notas")).toBeTruthy();
+    const selected = LESSONS.find((item) => item.title === "The Thrill Is Gone")!;
+    const selectedSection = lessonSections(selected)[1];
+    expect(app.container.querySelector(".tab-footer")?.textContent).toContain(
+      `0 / ${selectedSection.end - selectedSection.start + 1} notas`,
+    );
   });
 });

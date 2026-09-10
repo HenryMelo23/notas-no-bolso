@@ -1,7 +1,9 @@
 {
   "name": "notas-no-bolso",
   "private": true,
-  "version": "0.4.4",
+  "version": "0.5.0",
+  "description": "Caderno interativo de musica para iniciantes",
+  "author": "Notas no Bolso",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",

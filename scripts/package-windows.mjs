@@ -15,7 +15,7 @@ await writeFile(
       name: "notas-no-bolso",
       version,
       main: "electron/main.cjs",
-      description: "Caderno interativo de blues para iniciantes",
+      description: "Caderno interativo de musica para iniciantes",
       author: "Notas no Bolso",
     },
     null,

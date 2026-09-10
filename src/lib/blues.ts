@@ -13,6 +13,7 @@ export type TabNote = {
   finger: number;
   chord: string;
   bar: number;
+  beats?: number;
 };
 export type BluesLesson = {
   id: string;
@@ -27,6 +28,10 @@ export type BluesLesson = {
   tuningNote?: string;
   youtube?: string;
   recording?: string;
+  bpm?: number;
+  meter?: "3/4" | "4/4";
+  level?: "Primeiros passos" | "Fácil" | "Intermediário";
+  kind?: "Melodia" | "Dedilhado" | "Blues";
   sections?: { title: string; start: number; end: number }[];
 };
 const base =

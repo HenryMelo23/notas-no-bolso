@@ -254,6 +254,188 @@ function song(
     sections,
   };
 }
+type MelodyEvent = number | [midi: number, beats: number];
+type MelodyPhrase = {
+  title: string;
+  chord: string;
+  events: MelodyEvent[];
+};
+const firstPosition: Record<number, Position> = {
+  55: [3, 0, 0],
+  57: [3, 2, 2],
+  59: [2, 0, 0],
+  60: [2, 1, 1],
+  62: [2, 3, 3],
+  64: [1, 0, 0],
+  65: [1, 1, 1],
+  66: [1, 2, 2],
+  67: [1, 3, 3],
+};
+const melody = (...events: MelodyEvent[]) => events;
+function beginnerSong(
+  meta: Omit<BluesLesson, "notes" | "sections" | "subtitle">,
+  phrases: MelodyPhrase[],
+): BluesLesson {
+  const notes: TabNote[] = [];
+  const beatsPerBar = meta.meter === "3/4" ? 3 : 4;
+  let bar = 1;
+  let beat = 0;
+  const sections = phrases.map((phrase) => {
+    const start = notes.length;
+    for (const event of phrase.events) {
+      const [midi, beats] = Array.isArray(event) ? event : [event, 1];
+      const position = firstPosition[midi];
+      if (!position) throw new Error(`Missing beginner position: ${midi}`);
+      const [string, fret, finger] = position;
+      notes.push({ string, fret, finger: finger ?? 0, chord: phrase.chord, bar, beats });
+      beat += beats;
+      while (beat >= beatsPerBar - 0.001) {
+        beat -= beatsPerBar;
+        bar++;
+      }
+    }
+    if (beat > 0.001) {
+      beat = 0;
+      bar++;
+    }
+    return { title: phrase.title, start, end: notes.length - 1 };
+  });
+  return {
+    ...meta,
+    subtitle: `${meta.artist} · ${meta.arrangement}`,
+    notes,
+    sections,
+  };
+}
+const G3 = 55;
+const A3 = 57;
+const B3 = 59;
+const C4 = 60;
+const D4 = 62;
+const E4 = 64;
+const F4 = 65;
+const FS4 = 66;
+const G4 = 67;
+const publicDomain = "https://tonewright.app/songs/";
+export const BEGINNER_SONGS: BluesLesson[] = [
+  beginnerSong(
+    {
+      id: "mary-little-lamb",
+      title: "Mary Had a Little Lamb",
+      artist: "Canção tradicional",
+      key: "Dó",
+      arrangement: "Melodia completa em quatro notas",
+      source: publicDomain + "mary-had-a-little-lamb/",
+      youtube: "https://www.youtube.com/watch?v=WkAImciJiF4",
+      recording: "Vídeo-aula para iniciantes · Kids Guitar Zone",
+      bpm: 100,
+      meter: "4/4",
+      level: "Primeiros passos",
+      kind: "Melodia",
+      tip: "Comece aqui. São só quatro sons e nenhuma casa passa da terceira. Cante mentalmente a frase e deixe as notas longas respirarem no fim de cada linha.",
+    },
+    [
+      { title: "Frase 1", chord: "C", events: melody(E4, D4, C4, D4, E4, E4, [E4, 2]) },
+      { title: "Frase 2", chord: "G", events: melody(D4, D4, [D4, 2], E4, G4, [G4, 2]) },
+      { title: "Frase 3", chord: "C", events: melody(E4, D4, C4, D4, E4, E4, E4, E4) },
+      { title: "Final", chord: "C", events: melody(D4, D4, E4, D4, [C4, 4]) },
+    ],
+  ),
+  beginnerSong(
+    {
+      id: "twinkle-little-star",
+      title: "Brilha, Brilha, Estrelinha",
+      artist: "Melodia tradicional francesa",
+      key: "Sol",
+      arrangement: "Melodia completa em primeira posição",
+      source: publicDomain + "twinkle-twinkle-little-star/",
+      youtube: "https://www.youtube.com/watch?v=L9Z6OONa84g",
+      recording: "Vídeo-aula com tablatura · GuitarNick",
+      bpm: 100,
+      meter: "4/4",
+      level: "Primeiros passos",
+      kind: "Melodia",
+      tip: "As seis frases têm o mesmo desenho de pergunta e resposta. Toque cada par com calma e segure a última nota de cada frase por dois tempos.",
+    },
+    [
+      { title: "Brilha, estrelinha", chord: "G", events: melody(G3, G3, D4, D4, E4, E4, [D4, 2]) },
+      { title: "Quero ver você brilhar", chord: "G", events: melody(C4, C4, B3, B3, A3, A3, [G3, 2]) },
+      { title: "Lá no alto", chord: "D", events: melody(D4, D4, C4, C4, B3, B3, [A3, 2]) },
+      { title: "Como um diamante", chord: "D", events: melody(D4, D4, C4, C4, B3, B3, [A3, 2]) },
+      { title: "Brilha outra vez", chord: "G", events: melody(G3, G3, D4, D4, E4, E4, [D4, 2]) },
+      { title: "Resposta final", chord: "G", events: melody(C4, C4, B3, B3, A3, A3, [G3, 2]) },
+    ],
+  ),
+  beginnerSong(
+    {
+      id: "ode-to-joy",
+      title: "Ode à Alegria",
+      artist: "Ludwig van Beethoven",
+      key: "Sol",
+      arrangement: "Tema completo da Nona Sinfonia",
+      source: "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=528",
+      youtube: "https://www.youtube.com/watch?v=-BsSmMhuj7c",
+      recording: "Vídeo-aula fácil · GuitarNick",
+      bpm: 112,
+      meter: "4/4",
+      level: "Fácil",
+      kind: "Melodia",
+      tip: "A primeira ideia volta no final. Repare no miolo, onde aparecem notas mais curtas; ouça a frase antes e depois repita sem se preocupar com velocidade.",
+    },
+    [
+      { title: "Tema A", chord: "G", events: melody(B3, B3, C4, D4, D4, C4, B3, A3, G3, G3, A3, B3, [B3, 1.5], [A3, 0.5], [A3, 2]) },
+      { title: "Tema B", chord: "G", events: melody(B3, B3, C4, D4, D4, C4, B3, A3, G3, G3, A3, B3, [A3, 1.5], [G3, 0.5], [G3, 2]) },
+      { title: "Ponte", chord: "D", events: melody([A3, 0.5], [A3, 0.5], B3, G3, A3, [B3, 0.5], [C4, 0.5], B3, G3, A3, [B3, 0.5], [C4, 0.5], B3, A3, G3, A3, [D4, 3]) },
+      { title: "Tema final", chord: "G", events: melody(B3, B3, C4, D4, D4, C4, B3, A3, G3, G3, A3, B3, [A3, 1.5], [G3, 0.5], [G3, 2]) },
+    ],
+  ),
+  beginnerSong(
+    {
+      id: "happy-birthday",
+      title: "Parabéns pra Você",
+      artist: "Mildred J. Hill · melodia tradicional",
+      key: "Dó",
+      arrangement: "Melodia completa sem sair da terceira casa",
+      source: publicDomain + "happy-birthday-to-you/",
+      youtube: "https://www.youtube.com/watch?v=On_boyDfRek",
+      recording: "Vídeo-aula para iniciantes · FUXiNO",
+      bpm: 100,
+      meter: "3/4",
+      level: "Fácil",
+      kind: "Melodia",
+      tip: "O segredo está nas duas notas curtas que abrem cada frase. Ouça o exemplo, conte um-dois-três e toque como você cantaria.",
+    },
+    [
+      { title: "Parabéns pra você", chord: "C", events: melody([G3, 0.5], [G3, 0.5], A3, G3, C4, [B3, 2]) },
+      { title: "Nesta data querida", chord: "G7", events: melody([G3, 0.5], [G3, 0.5], A3, G3, D4, [C4, 2]) },
+      { title: "Muitas felicidades", chord: "C", events: melody([G3, 0.5], [G3, 0.5], G4, E4, C4, B3, [A3, 2]) },
+      { title: "Muitos anos de vida", chord: "F", events: melody([F4, 0.5], [F4, 0.5], E4, C4, D4, [C4, 2]) },
+    ],
+  ),
+  beginnerSong(
+    {
+      id: "amazing-grace",
+      title: "Amazing Grace",
+      artist: "Hino tradicional · melodia New Britain",
+      key: "Dó",
+      arrangement: "Melodia cantável em quatro frases",
+      source: publicDomain + "amazing-grace/",
+      youtube: "https://www.youtube.com/watch?v=AgwZ53ySEJo",
+      recording: "Vídeo-aula e play-along · Lauren Bateman",
+      bpm: 92,
+      meter: "3/4",
+      level: "Fácil",
+      kind: "Melodia",
+      tip: "Esta música ensina a sustentar o som. Não repita as notas longas: deixe a corda cantar pelo número de tempos indicado e siga para a próxima articulação.",
+    },
+    [
+      { title: "Amazing grace", chord: "C", events: melody([G3, 1], [C4, 2], E4, [C4, 0.5], [E4, 0.5], [D4, 2], [C4, 2], A3, [G3, 2]) },
+      { title: "That saved a wretch", chord: "G", events: melody(G3, [C4, 2], E4, [C4, 0.5], [E4, 0.5], [D4, 2], [G4, 3]) },
+      { title: "I once was lost", chord: "F", events: melody(E4, [G4, 2], E4, G4, E4, [C4, 2], G3, A3, C4, [C4, 2], A3, [G3, 2]) },
+      { title: "But now I see", chord: "C", events: melody(G3, [C4, 2], E4, [C4, 0.5], [E4, 0.5], [D4, 2], [C4, 3]) },
+    ],
+  ),
+];
 const c = "https://www.cifraclub.com.br/";
 const y = (id: string) => `https://www.youtube.com/watch?v=${id}`;
 const minorCycle = "Bm7 Bm7 Bm7 Bm7 Em7 Em7 Bm7 Bm7 G7(9) F#7(9) Bm7 F#7(9)";
@@ -571,7 +753,7 @@ export const SONGS: BluesLesson[] = [
     ],
   ),
 ];
-export const LESSONS = [...BLUES, ...SONGS];
+export const LESSONS = [...BEGINNER_SONGS, ...BLUES, ...SONGS];
 export function lessonSections(lesson: BluesLesson) {
   return (
     lesson.sections ??

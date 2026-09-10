@@ -336,6 +336,31 @@ main {
   color: var(--muted);
   gap: 12px;
 }
+.rhythm-row {
+  display: grid;
+  grid-template-columns: 42px repeat(8, minmax(0, 1fr));
+  align-items: center;
+  min-height: 25px;
+  margin: 0 24px;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+}
+.rhythm-row > span {
+  text-align: left;
+  font-family: "Patrick Hand", "Comic Sans MS", cursive;
+  font-size: 13px;
+}
+.rhythm-row small {
+  display: block;
+  min-width: 0;
+}
+.rhythm-row small.current {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .lesson-feedback {
   height: 116px;
   overflow-y: auto;
@@ -626,6 +651,20 @@ main {
 }
 .lesson-list {
   border-top: 2px solid var(--ink);
+}
+.song-facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.song-facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .lesson-list article {
   display: grid;
