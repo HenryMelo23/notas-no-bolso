@@ -1,7 +1,7 @@
 {
   "name": "notas-no-bolso",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Caderno interativo de musica para iniciantes",
   "author": "Notas no Bolso",
   "type": "module",

@@ -6,6 +6,8 @@ import {
   Check,
   ChevronRight,
   CircleHelp,
+  ExternalLink,
+  GraduationCap,
   Guitar,
   Headphones,
   Mic,
@@ -36,13 +38,14 @@ import {
   type BluesLesson,
 } from "./lib/blues";
 import { LESSONS, lessonSections } from "./lib/repertoire";
+import { CURRICULUM_MODULES, type CourseModule } from "./lib/curriculum";
 import { LessonFollower, type FollowResult } from "./lib/lessonFollower";
 import { useTuner } from "./hooks/useTuner";
 import { Capacitor } from "@capacitor/core";
 import { App as NativeApp } from "@capacitor/app";
 import { TuningCoach } from "./lib/tuningCoach";
 
-type View = "practice" | "library" | "tuner";
+type View = "practice" | "library" | "tuner" | "modules";
 type Session = FollowResult & { index: number; complete: boolean };
 const beatLabel = (beats = 1) =>
   beats === 0.5 ? "meio tempo" : `${beats} ${beats === 1 ? "tempo" : "tempos"}`;
@@ -81,6 +84,33 @@ function writeProgress(value: Record<string, number>) {
     /* Practice still works when storage is unavailable. */
   }
 }
+function readCurriculumProgress(): Record<string, number[]> {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem("notas-curriculum-progress") ?? "{}",
+    );
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(
+      Object.entries(value).flatMap(([id, steps]) => {
+        if (!Array.isArray(steps)) return [];
+        const valid = steps.filter(
+          (step): step is number =>
+            typeof step === "number" && Number.isInteger(step) && step >= 0,
+        );
+        return [[id, [...new Set(valid)]]];
+      }),
+    );
+  } catch {
+    return {};
+  }
+}
+function writeCurriculumProgress(value: Record<string, number[]>) {
+  try {
+    localStorage.setItem("notas-curriculum-progress", JSON.stringify(value));
+  } catch {
+    /* Modules remain usable when storage is unavailable. */
+  }
+}
 
 export function App() {
   const [dark, setDark] = useState(() => {
@@ -99,6 +129,12 @@ export function App() {
   const [laps, setLaps] = useState(0);
   const [view, setView] = useState<View>("practice");
   const viewHistory = useRef<View[]>(["practice"]);
+  const [selectedModuleId, setSelectedModuleId] = useState(
+    CURRICULUM_MODULES[0].id,
+  );
+  const [curriculumProgress, setCurriculumProgress] = useState(
+    readCurriculumProgress,
+  );
   const [lessonId, setLessonId] = useState(LESSONS[0].id);
   const [session, setSession] = useState(initialSession);
   const sessionRef = useRef(session);
@@ -125,6 +161,9 @@ export function App() {
   const runToken = useRef(0);
   const tuner = useTuner();
   const lesson = LESSONS.find((l) => l.id === lessonId)!;
+  const selectedModule =
+    CURRICULUM_MODULES.find((item) => item.id === selectedModuleId) ??
+    CURRICULUM_MODULES[0];
   const sections = useMemo(() => lessonSections(lesson), [lesson]);
   const noteOptions = useMemo(
     () =>
@@ -240,6 +279,16 @@ export function App() {
     rememberView("practice");
     setView("practice");
     scrollToTop();
+  }
+  function toggleModuleStep(module: CourseModule, stepIndex: number) {
+    setCurriculumProgress((old) => {
+      const current = new Set(old[module.id] ?? []);
+      if (current.has(stepIndex)) current.delete(stepIndex);
+      else current.add(stepIndex);
+      const next = { ...old, [module.id]: [...current].sort((a, b) => a - b) };
+      writeCurriculumProgress(next);
+      return next;
+    });
   }
   function changeRange(start: number, end: number) {
     const from = Math.max(0, Math.min(lesson.notes.length - 1, start));
@@ -537,6 +586,13 @@ export function App() {
           >
             <SlidersHorizontal size={16} />
             Afinador
+          </button>
+          <button
+            className={view === "modules" ? "selected" : ""}
+            onClick={() => go("modules")}
+          >
+            <GraduationCap size={16} />
+            Módulos
           </button>
         </nav>
         <div className="header-tools">
@@ -1110,6 +1166,108 @@ export function App() {
                   .toLocaleLowerCase()
                   .includes(search.toLocaleLowerCase()),
               ) && <p>Nenhuma música encontrada.</p>}
+            </div>
+          </>
+        )}
+
+        {view === "modules" && (
+          <>
+            <div className="page-heading module-heading">
+              <div>
+                <span className="eyebrow">TRILHA DE ESTUDO</span>
+                <h1>Aprenda com o violão na mão.</h1>
+                <p>
+                  Escolha qualquer módulo. Cada etapa mistura uma ideia curta,
+                  uma missão prática e uma música para experimentar.
+                </p>
+              </div>
+              <div className="buddy-coach module-buddy" role="status">
+                <img src="./blues-buddy.svg" alt="Mascote violão do Notas no Bolso" />
+                <div className="buddy-bubble">
+                  <strong>Bluesinho</strong>
+                  <span>Você pode começar por onde sua curiosidade estiver.</span>
+                </div>
+              </div>
+            </div>
+            <div className="module-layout">
+              <aside className="module-picker" aria-label="Escolher módulo">
+                <div className="module-picker-title">
+                  <span className="eyebrow">CAMINHOS ABERTOS</span>
+                  <strong>{CURRICULUM_MODULES.length} módulos</strong>
+                </div>
+                {CURRICULUM_MODULES.map((item, index) => {
+                  const done = curriculumProgress[item.id]?.length ?? 0;
+                  return (
+                    <button
+                      key={item.id}
+                      className={item.id === selectedModule.id ? "selected" : ""}
+                      aria-pressed={item.id === selectedModule.id}
+                      onClick={() => setSelectedModuleId(item.id)}
+                    >
+                      <span className="module-number">{String(index + 1).padStart(2, "0")}</span>
+                      <span>
+                        <small>{item.level}</small>
+                        <b>{item.title}</b>
+                        <em>{done}/{item.steps.length} missões</em>
+                      </span>
+                      <ChevronRight size={17} />
+                    </button>
+                  );
+                })}
+              </aside>
+              <section className="module-detail" aria-labelledby="module-title">
+                <span className="eyebrow">{selectedModule.eyebrow}</span>
+                <div className="module-detail-heading">
+                  <div>
+                    <h2 id="module-title">{selectedModule.title}</h2>
+                    <p>{selectedModule.description}</p>
+                  </div>
+                  <span className="module-level">{selectedModule.level}</span>
+                </div>
+                <div className="module-why">
+                  <strong>Por que isso importa?</strong>
+                  <p>{selectedModule.why}</p>
+                </div>
+                <div className="module-step-list">
+                  {selectedModule.steps.map((step, index) => {
+                    const done = curriculumProgress[selectedModule.id]?.includes(index) ?? false;
+                    return (
+                      <article className={`module-step ${done ? "done" : ""}`} key={step.title}>
+                        <span className="module-step-number">{String(index + 1).padStart(2, "0")}</span>
+                        <div>
+                          <div className="module-step-title">
+                            <h3>{step.title}</h3>
+                            {done && <Check size={19} aria-label="Missão concluída" />}
+                          </div>
+                          <p><b>Entenda:</b> {step.theory}</p>
+                          <p><b>Faça agora:</b> {step.practice}</p>
+                          <div className="module-step-actions">
+                            <button className="primary" onClick={() => selectLesson(step.lessonId)}>
+                              <Play size={16} /> Praticar missão
+                            </button>
+                            <label className="mission-check">
+                              <input
+                                type="checkbox"
+                                checked={done}
+                                onChange={() => toggleModuleStep(selectedModule, index)}
+                              />
+                              {step.mission}
+                            </label>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+                <div className="module-sources">
+                  <strong>Referências para continuar</strong>
+                  {selectedModule.sources.map((source) => (
+                    <a key={source.href} href={source.href} target="_blank" rel="noreferrer" onClick={pauseForRecording}>
+                      {source.label} <ExternalLink size={14} />
+                    </a>
+                  ))}
+                </div>
+              </section>
             </div>
           </>
         )}

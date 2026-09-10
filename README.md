@@ -1,6 +1,6 @@
 # Notas no Bolso
 
-Caderno musical para iniciantes, com afinador, temas claro/escuro, repetição de trechos e cinco melodias conhecidas para aprender de verdade. Depois delas, a biblioteca reúne cinco estudos de blues e nove músicas em versões didáticas baseadas no material enviado, com links para ouvir cada referência.
+Caderno musical para iniciantes, com afinador, temas claro/escuro, repetição de trechos, cinco módulos de estudo e cinco melodias conhecidas para aprender de verdade. Depois delas, a biblioteca reúne oito estudos de blues e nove músicas em versões didáticas baseadas no material enviado, com links para ouvir cada referência.
 
 ## Rodar no desktop
 
@@ -26,7 +26,7 @@ npm run electron:pack
 Saída esperada:
 
 ```text
-entrega-notas-0.5.0\Notas-no-Bolso-0.5.0.exe
+entrega-notas-0.7.0\Notas-no-Bolso-0.7.0.exe
 ```
 
 Esse executável portátil inclui os arquivos necessários e pode ser transferido sozinho. A pasta `Notas no Bolso-win32-x64` também é gerada para diagnóstico; o executável interno dessa pasta depende dos arquivos ao redor.
@@ -48,7 +48,7 @@ npm run android:build
 Saída esperada do APK debug:
 
 ```text
-entrega-notas-0.5.0\Notas-no-Bolso-0.5.0-debug.apk
+entrega-notas-0.7.0\Notas-no-Bolso-0.7.0-debug.apk
 ```
 
 Aulas e fontes funcionam offline; o YouTube precisa de internet. O app pausa a captura em segundo plano. O botão Voltar fecha a ajuda, retorna ao treino ou minimiza o aplicativo.
@@ -57,7 +57,7 @@ Em **Trecho de prática**, escolha a parte inicial/final ou as notas exatas. A o
 
 ## Limites atuais
 
-Na versão 0.6.0, entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. Nas lições, um novo ataque correto avança no primeiro quadro confiável mesmo com outras cordas vibrando; a sustentação sozinha não conta como outro toque. O app mantém a leitura enquanto consegue distinguir a frequência do ruído, rejeita modulações lentas do ambiente e não troca uma fundamental em queda pela oitava mais fraca. Um ataque que já existia antes de iniciar a prática é descartado. O botão do tom da música explica os acordes sem alterar a afinação.
+Na versão 0.7.0, a área **Módulos** organiza cinco caminhos independentes: mapa das cordas, ritmo e tablatura, construção de acordes, blues em 12 compassos e pentatônica. Cada etapa combina teoria curta, uma missão prática, progresso persistente e acesso direto à música relacionada. Entrar no afinador inicia o microfone. O modo automático reconhece a corda solta; tocar em uma corda seleciona o modo manual. Leituras dentro de 5 cents por um segundo conferem a corda e avançam para a próxima. Nas lições, um novo ataque correto avança no primeiro quadro confiável mesmo com outras cordas vibrando; a sustentação sozinha não conta como outro toque. O app mantém a leitura enquanto consegue distinguir a frequência do ruído, rejeita modulações lentas do ambiente e não troca uma fundamental em queda pela oitava mais fraca. Um ataque que já existia antes de iniciar a prática é descartado. O botão do tom da música explica os acordes sem alterar a afinação.
 
 O afinador analisa 8192 amostras e combina a estimativa temporal MPM com um refinamento espectral estreito da frequência fundamental. O refinamento não recebe a nota esperada e, portanto, não desloca uma nota errada artificialmente para o centro. Quando o fundamental está fraco demais, a estimativa temporal conservadora é mantida.
 
@@ -65,7 +65,7 @@ Durante uma música, um detector separado identifica o ataque de uma nova nota e
 
 As cinco primeiras músicas são melodias completas, em primeira posição e com no máximo a terceira casa: **Mary Had a Little Lamb**, **Brilha, Brilha, Estrelinha**, **Ode à Alegria**, **Parabéns pra Você** e **Amazing Grace**. O botão **Ouvir trecho** toca um guia sintetizado com contagem de entrada, BPM, compasso e duração das notas; **Ouvir gravação** abre a vídeo-aula vinculada. A faixa de prática permite escolher a parte inicial e final ou repetir um intervalo de notas.
 
-A biblioteca também traz três composições didáticas de blues: **Blues de varanda**, **Blues: pergunta e resposta** e **Blues no quintal**. Elas percorrem 12 compassos, mostram a relação I-IV-V e usam shuffle, pentatônica e turnaround para que o iniciante entenda como a linguagem se transforma em música.
+A biblioteca também traz três composições didáticas de blues: **Blues de varanda**, **Blues: pergunta e resposta** e **Blues no quintal**. Elas percorrem 12 compassos, mostram a relação I-IV-V e usam shuffle, pentatônica e turnaround para que o iniciante entenda como a linguagem se transforma em música. Os cinco estudos anteriores continuam disponíveis, totalizando oito estudos de blues.
 
 O APK inclui `RECORD_AUDIO` e `MODIFY_AUDIO_SETTINGS`, ambas exigidas pelo fluxo de áudio do Capacitor instalado. O pedido de permissão não interrompe mais a inicialização. Em caso de falha, a mensagem mostra o código do erro. A validação em Redmi Note 10S / Android 13 ainda depende de teste físico.
 

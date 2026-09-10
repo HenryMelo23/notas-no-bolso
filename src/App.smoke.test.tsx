@@ -250,4 +250,15 @@ describe("mounted application audio smoke", () => {
       `0 / ${selectedSection.end - selectedSection.start + 1} notas`,
     );
   });
+  it("opens independent study modules and links a mission to practice", () => {
+    const app = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Módulos" }));
+    expect(screen.getByRole("heading", { name: "Aprenda com o violão na mão." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Braço, cordas e notas" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Blues em 12 compassos/ }));
+    expect(screen.getByRole("heading", { name: "Blues em 12 compassos" })).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: /Praticar missão/ })[0]);
+    expect(app.container.querySelector(".tab-window")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Blues de varanda" })).toBeTruthy();
+  });
 });
